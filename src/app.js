@@ -12,6 +12,7 @@ app.use(cors({
 app.use(express.json({limit : "16kb"}));
 app.use(express.urlencoded({extended : true, limit: "16kb"}));
 app.use(express.static("public"));
+//this cookieparser allows the user.controller to access the cookies and send access and refresh token within them to the fronted
 app.use(cookieParser());
 
 //routes import 
