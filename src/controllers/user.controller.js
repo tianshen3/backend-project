@@ -281,10 +281,11 @@ const getCurrentUser = asyncHandler(async(req, res) => {
     return res
     .status(200)
     .json(
-        200,
-        req.user,
-        "current user fetched successfully"
-    )
+        new ApiResponse(
+            200,
+            req.user,
+            "current user fetched successfully"
+        ))
 });
 
 
@@ -296,7 +297,7 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             fullName,
@@ -336,6 +337,8 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
         },
         {new :true}
     ).select("-password")
+
+    //Create a utility for deleting an old image from the cloudinary
 
     return res
     .status(200)
