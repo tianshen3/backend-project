@@ -351,6 +351,7 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
     )
 });
 
+
 //upadatin the user cover image
 const updateUserCoverImage = asyncHandler(async(req,res) => {
     const coverImageLocalPath = req.file?.path;
@@ -388,6 +389,89 @@ const updateUserCoverImage = asyncHandler(async(req,res) => {
     )
 });
 
+
+//
+const getUserChannelProfile = asyncHandler(async(req, res) => {
+
+    //get username from the params of req
+    const {username} = req.params;
+
+    //check and username
+    if(!username?.trim()) {
+        throw new ApiError(400, "username is missing");
+    }
+
+    //find the id creation of aggregation pipeline
+    const channel =  await User.aggregate([
+        {
+            $match : {
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscription",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+
+            }
+        },
+        {
+            $lookup: {
+                from: "subscription",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscriber"
+            }
+        },
+        {
+            $addFields: {
+                subscibersCount: {
+                    $size: "$subscribers"
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "subscribers"]},
+                        then: true,
+                        else: false
+                    }
+                }                   
+                
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscriberCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ]);
+    //what datatype does aggregate returns
+    // check this using console.log, mostly they return array
+    // but only the first index is usefull
+    if(!channel?.length){
+        throw new ApiError(404, "channel does not exist");
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channel[0], "user channer fetched successfully")
+    );
+
+});
+
+
 export {
     registerUser,
     loginUser,
@@ -397,7 +481,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
 };
 
 
